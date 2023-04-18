@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/sys/windows/registry"
@@ -28,6 +29,8 @@ func main() {
 	}
 
 	switch args[1] {
+	case "-v", "--v", "version":
+		fmt.Println("v" + version)
 	case "creat":
 		if len(args) == 3 {
 			CrearFolder(args[2])
@@ -41,7 +44,7 @@ func main() {
 
 // 输出目录
 func Catalogue() {
-	files, _ := ioutil.ReadDir("./")
+	files, _ := ioutil.ReadDir(absolutePath())
 	for _, file := range files {
 		if file.IsDir() {
 			fmt.Println(file.Name())
@@ -57,15 +60,15 @@ func CrearFolder(file_name string) {
 }
 
 func ModifyEnv(file_name string) {
-	files, _ := ioutil.ReadDir("./" + file_name)
+	dir := absolutePath()
+
+	files, _ := ioutil.ReadDir(dir + "/" + file_name)
 	if len(files) == 0 {
 		fmt.Println("找不到目录或目录下没有任何可切换版本")
 		return
 	}
 
 	pathList := getEnv2()
-	dir, err := os.Getwd()
-	CheckErr(err)
 	i := 1
 
 	var folder []string
@@ -107,8 +110,6 @@ func ModifyEnv(file_name string) {
 	cmd := exec.Command("setx", env_var, newEnv)
 	CheckErr(cmd.Run())
 
-	// 刷新环境变量
-	Refreshenv()
 }
 
 // 获取环境变量
@@ -174,24 +175,8 @@ func removeDuplicates(nums []string) []string {
 	return result
 }
 
-func Refreshenv() {
-	// const (
-	// 	HWND_BROADCAST   = 0xffff
-	// 	WM_SETTINGCHANGE = 0x001A
-	// 	SMTO_ABORTIFHUNG = 0x0002
-	// )
-	// ret, _, err := syscall.NewLazyDLL("user32.dll").NewProc("SendMessageTimeoutW").Call(
-	// 	uintptr(HWND_BROADCAST),
-	// 	uintptr(WM_SETTINGCHANGE),
-	// 	0,
-	// 	uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr("Environment"))),
-	// 	uintptr(SMTO_ABORTIFHUNG),
-	// 	uintptr(5000), // 5 秒超时时间
-	// 	0,
-	// )
-	// if ret == 0 {
-	// 	panic(err)
-	// }
-	// // 等待一段时间以确保环境变量已被刷新
-	// time.Sleep(1 * time.Second)
+func absolutePath() string {
+	exePath, err := os.Executable()
+	CheckErr(err)
+	return filepath.Dir(exePath)
 }
