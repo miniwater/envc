@@ -45,15 +45,21 @@ func main() {
 // 输出目录
 func Catalogue() {
 	files, _ := ioutil.ReadDir(absolutePath())
+	i := 0
 	for _, file := range files {
 		if file.IsDir() {
+			i++
 			fmt.Println(file.Name())
 		}
+	}
+	if i > 0 {
+		fmt.Println("请输入要切换的环境")
 	}
 }
 
 func CrearFolder(file_name string) {
-	err := os.Mkdir("./"+file_name, os.ModePerm)
+	dir := absolutePath()
+	err := os.Mkdir(dir+"/"+file_name, os.ModePerm)
 	if err != nil {
 		fmt.Println(file_name + "目录已存在")
 	}
@@ -87,13 +93,16 @@ func ModifyEnv(file_name string) {
 	}
 
 	var num int
-	fmt.Println("请输入要切换环境的序号，按0退出")
+	fmt.Println("请输入要切换环境的版本序号，按0退出")
 	fmt.Scanln(&num)
 	if num == 0 || num > len(folder) {
 		return
 	}
 
 	newPath := dir + "\\" + file_name + "\\" + folder[num-1]
+	if checkbin(newPath) {
+		newPath = newPath + "\\bin"
+	}
 
 	chang := 0
 	for i := 0; i < len(pathList); i++ {
@@ -109,7 +118,7 @@ func ModifyEnv(file_name string) {
 	newEnv := strings.Join(pathList, ";") + ";"
 	cmd := exec.Command("setx", env_var, newEnv)
 	CheckErr(cmd.Run())
-
+	fmt.Println("切换成功，需重启终端以更新环境")
 }
 
 // 获取环境变量
@@ -179,4 +188,13 @@ func absolutePath() string {
 	exePath, err := os.Executable()
 	CheckErr(err)
 	return filepath.Dir(exePath)
+}
+
+func checkbin(path string) bool {
+	files, _ := ioutil.ReadDir(path + "\\bin")
+	if len(files) > 0 {
+		return true
+	} else {
+		return false
+	}
 }
